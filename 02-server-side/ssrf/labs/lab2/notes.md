@@ -1,138 +1,28 @@
-📁 File Upload Vulnerabilities (Flawed Validation)
+In Lab 2, we use a file upload vulnerability. In this lab, the server only checks the outer part of the file and does not inspect the internal file content properly.
 
+As a result, we can bypass the restriction by modifying the request.
 
+First, I created a file named:
 
-Many web applications allow users to upload files (images, PDFs, etc.). If validation is weak or missing, attackers can upload malicious files (like web shells) and compromise the server.
 
+exploite.php
 
 
-⚠️ 1. Insecure File Type Validation
+Inside the file, I added the following malicious content:
 
+```php
+<?php echo file_get_contents('/home/carlos/secret'); ?>
 
+Then, in Burp Suite, I turned Intercept ON and uploaded the file.
 
-Some applications try to restrict file uploads using checks like:
+During interception, I modified the request by changing the Content-Type to:
 
+image/jpeg
 
+After that, I forwarded all the requests and turned Intercept OFF.
 
-Content-Type header (e.g., image/png, image/jpeg)
+The file was uploaded successfully.
 
-File extension (e.g., .jpg, .png)
+Then I sent the request to Repeater and forwarded it. In the response, I received the output of the executed PHP code, which revealed the contents of:
 
-❌ Problem:
-
-
-
-Both of these can be easily spoofed.
-
-
-
-Example:
-
-
-
-A malicious file shell.php renamed as image.png
-
-Or Content-Type changed to image/png
-
-
-
-Server may still accept it if validation is weak.
-
-
-
-⚠️ 2. Relying Only on Client-Side Validation
-
-
-
-Some websites validate files using JavaScript before upload.
-
-
-
-❌ Problem:
-
-Client-side checks can be bypassed easily using tools like Burp Suite
-
-Request can be modified before reaching the server
-
-⚠️ 3. Poor Content-Type Validation
-
-
-
-Applications may only check:
-
-
-
-Content-Type: image/png
-
-❌ Problem:
-
-
-
-Attacker can change it to:
-
-
-
-Content-Type: image/png
-
-
-
-while uploading a PHP or JSP file.
-
-
-
-Server trusts header → file gets uploaded.
-
-
-
-⚠️ 4. Missing File Content Validation
-
-
-
-Secure systems should verify:
-
-
-
-Actual file signature (magic bytes)
-
-Real file format, not just extension
-
-❌ Problem:
-
-
-
-If not checked, attacker can upload:
-
-
-
-shell.php.jpg
-
-disguised executable files
-
-⚠️ 5. Dangerous Outcome
-
-
-
-If upload directory is executable:
-
-
-
-Attacker uploads web shell
-
-Gains remote code execution (RCE)
-
-Full server compromise possible
-
-🛠️ How Attackers Bypass Filters
-
-
-
-Using tools like:
-
-
-
-Burp Suite Repeater
-
-Intercepting and modifying upload request
-
-Changing filename, extension, Content-Type
-
+/home/carlos/secret
