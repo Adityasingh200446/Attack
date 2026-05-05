@@ -1,0 +1,92 @@
+# DOM XSS in Stock Checker (document.write)
+
+## 🧠 Description
+
+This lab contains a **DOM-based Cross-Site Scripting (XSS)** vulnerability in the stock checker functionality.
+The application uses `document.write()` to render data taken directly from `location.search` (URL), which is fully controllable by the user.
+
+The input is reflected inside a **`<select>` dropdown**, making it vulnerable to DOM-based XSS.
+
+---
+
+## 🔍 Finding the Vulnerability
+
+1. Tested all input points with random values.
+2. Found that the **stock checker feature** reflects input from the URL.
+3. Using browser DevTools, observed:
+
+   ```javascript
+   document.write(location.search);
+   ```
+4. Confirmed that user-controlled data appears inside a `<select>` element.
+
+---
+
+## 🧪 Testing
+
+Modified the URL:
+
+```
+?productId=1&storeId=test
+```
+
+👉 The value appeared inside the dropdown (`<option>`), confirming it is reflected in the DOM.
+
+---
+
+## 💥 Exploitation
+
+Since the input is inside a `<select>` element, we must first **break out of the existing HTML context**.
+
+### Payload:
+
+```html
+"></select><img src=1 onerror=alert(1)>
+```
+
+### URL Encoded Payload:
+
+```text
+%22%3E%3C/select%3E%3Cimg%20src=1%20onerror=alert(1)%3E
+```
+
+---
+
+## ⚙️ Explanation
+
+* `"` → closes the attribute
+* `</select>` → closes the existing dropdown
+* `<img src=1 onerror=alert(1)>` → injects a malicious element
+
+👉 The image fails to load, triggering `onerror` → executes JavaScript
+
+---
+
+## ✅ Result
+
+The payload executes successfully, triggering an alert box.
+This confirms a **DOM-based XSS vulnerability**.
+
+---
+
+## 🧠 Key Takeaway
+
+* Always identify **source → sink flow**
+* Here:
+
+  * Source → `location.search`
+  * Sink → `document.write()`
+* Must consider **HTML context** before injecting payloads
+
+---
+
+## 🔐 Fix (Mitigation)
+
+* Avoid using `document.write()`
+* Sanitize user input
+* Use safe DOM methods like:
+
+  * `textContent`
+  * `createElement()`
+
+---
