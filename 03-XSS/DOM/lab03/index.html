@@ -1,0 +1,101 @@
+# DOM-Based XSS Lab 03 – Write-up
+
+## 📌 Description
+
+This lab contains a DOM-based Cross-Site Scripting (XSS) vulnerability in the **Submit Feedback** page.
+The application uses the jQuery `$` selector to find an anchor (`<a>`) element and sets its `href` attribute using data from `location.search`.
+
+---
+
+## 🔍 Step 1: Identifying the Vulnerability
+
+* First, test input fields and URL parameters using random values.
+
+* Modify the URL parameter (e.g., `returnPath`) with a random string:
+
+  ```
+  ?returnPath=test123
+  ```
+
+* Inspect the page and observe that the value appears inside the `href` attribute of the **Back** link.
+
+👉 This confirms:
+
+* **Source** → `location.search` (user-controlled input)
+* **Sink** → jQuery `attr()` function
+
+---
+
+## ⚠️ Step 2: Understanding the Issue
+
+The application uses code similar to:
+
+```javascript
+var data = location.search;
+$("#backLink").attr("href", data);
+```
+
+* The `attr()` function directly sets the `href` attribute
+* No validation or sanitization is performed
+* This allows attacker-controlled input to modify the link
+
+---
+
+## 🧪 Step 3: Exploiting the Vulnerability
+
+Replace the URL parameter with a JavaScript payload:
+
+```
+?returnPath=javascript:alert(document.cookie)
+```
+
+---
+
+## 🎯 Step 4: Trigger the Payload
+
+* Click the **Back** link
+* The browser executes:
+
+```javascript
+alert(document.cookie)
+```
+
+👉 The XSS attack is successfully triggered.
+
+---
+
+## 🚨 Root Cause
+
+* User input from `location.search` is directly passed into `attr()`
+* No validation or filtering is applied
+* This allows injection of `javascript:` URLs
+
+---
+
+## ✅ Conclusion
+
+This is a **DOM-based XSS vulnerability** caused by:
+
+* Unsafe use of jQuery `attr()`
+* Direct use of user-controlled input
+
+---
+
+## 🔐 Prevention
+
+* Validate and sanitize all user input
+* Avoid using `attr()` with untrusted data
+* Restrict allowed URL schemes (e.g., only `https://`)
+* Use safer alternatives when possible
+
+---
+
+## 📌 Summary
+
+| Component | Type                |
+| --------- | ------------------- |
+| Source    | `location.search`   |
+| Sink      | `attr("href", ...)` |
+| Impact    | DOM XSS             |
+
+---
